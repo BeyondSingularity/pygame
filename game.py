@@ -97,8 +97,7 @@ smax = 100
 arrow = Arrow(sp, x, y, defa, g, smax, 100, 100, 0, 0)
 
 for i in range(3):
-    Heart(healt_sprite, i * 30 + 250, width - 600)
-    print(width - 600)
+    Heart(healt_sprite, i * 30 + 250, height - 175)
 
 running = True
 while running:
