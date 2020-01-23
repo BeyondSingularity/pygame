@@ -10,7 +10,7 @@ pygame.init()
 enemy = pygame.sprite.Group()
 player_sprite = pygame.sprite.Group()
 sp = pygame.sprite.Group()
-healt_sprite = pygame.sprite.Sprite
+healt_sprite = pygame.sprite.Group()
 
 
 def load_image(name, colorkey=None):
@@ -35,7 +35,7 @@ class Arrow(pygame.sprite.Sprite):
         self.angle = math.degrees(math.atan((y1 - y2) / (x1 - x2)))
         self.vx = self.defa * (x1 - x2) / l * (min(self.smax, l) / self.smax)
         self.vy = self.defa * (y1 - y2) / l * (min(self.smax, l) / self.smax)
-        self.def_image = load_image("Arrow.png")
+        self.def_image = load_image("Arrow.png", (255, 255, 255))
         self.image = pygame.transform.rotate(self.def_image, -self.angle)
         self.rect = self.image.get_rect()
         self.rect.x = x
@@ -62,7 +62,7 @@ class Arrow(pygame.sprite.Sprite):
 class Player(pygame.sprite.Sprite):
     def __init__(self, group):
         super().__init__(group)
-        not_image = load_image("Boy.png")
+        not_image = load_image("Boy.png", (255, 255, 255))
         self.image = pygame.transform.scale(not_image, (132, 140))
         self.rect = self.image.get_rect()
         self.rect.x = 200
@@ -73,19 +73,21 @@ class Player(pygame.sprite.Sprite):
 
 
 class Heart(pygame.sprite.Sprite):
-    def __init__(self, group):
+    def __init__(self, group, x, y):
         super().__init__(group)
-        not_im = load_image('heart.png')
-        self.image = pygame.transform.scale(not_im, (120, 130))
+        not_im = load_image('heart.png', (255, 255, 255))
+        self.image = pygame.transform.scale(not_im, (30, 30))
         self.rect = self.image.get_rect()
-        self.rect.x = 200
-        self.rect.y = height - 150
+        self.rect.x = x
+        self.rect.y = y
+
+    def update(self, *args):
+        pass
 
 
 screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 size = width, height = pygame.display.get_surface().get_size()
 player = Player(player_sprite)
-heart = Heart(healt_sprite)
 
 x = 200 + 17 * 4
 y = 100
@@ -94,6 +96,10 @@ g = 10
 smax = 100
 arrow = Arrow(sp, x, y, defa, g, smax, 100, 100, 0, 0)
 
+for i in range(3):
+    Heart(healt_sprite, i * 30 + 250, width - 600)
+    print(width - 600)
+
 running = True
 while running:
     for event in pygame.event.get():
@@ -101,12 +107,16 @@ while running:
             running = False
         if event.type == pygame.MOUSEBUTTONDOWN:
             pass
-    screen.fill((255, 255, 255))
+    screen.fill((0, 0, 0))
     player_sprite.draw(screen)
     player_sprite.update()
 
     sp.draw(screen)
     sp.update(120)
+
+    healt_sprite.draw(screen)
+    healt_sprite.update()
+
     pygame.display.flip()
     time.sleep(1 / 120)
 
