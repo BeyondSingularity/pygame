@@ -32,7 +32,10 @@ class Arrow(pygame.sprite.Sprite):
         self.defa = defa
         self.smax = smax
         self.g = g
+        self.type = 1
         l = math.hypot(y1 - y2, x1 - x2)
+        if x1 == x2:
+            x2 += 1
         self.angle = math.degrees(math.atan((y1 - y2) / (x1 - x2)))
         self.vx = self.defa * (x1 - x2) / l * (min(self.smax, l) / self.smax)
         self.vy = self.defa * (y1 - y2) / l * (min(self.smax, l) / self.smax)
@@ -46,22 +49,34 @@ class Arrow(pygame.sprite.Sprite):
         self.y = y
 
     def update(self, fps):
+        if self.type == 2:
+            return 0
         self.vy -= self.g / fps
         y2 = self.y + self.vy / fps - self.g / fps ** 2 / 2
         x2 = self.x + self.vx / fps
         self.angle = math.degrees(math.atan((y2 - self.y) / (x2 - self.x)))
-
-        self.image = pygame.transform.rotate(self.def_image, self.angle - 90)
-
+        if x2 - self.x < 0:
+            self.image = pygame.transform.rotate(self.def_image, self.angle + 90)
+        else:
+            self.image = pygame.transform.rotate(self.def_image, self.angle - 90)
         im_x, im_y = self.image.get_size()
-
+        if x2 - self.x > 0:
+            self.arrowhead = (x2 + im_x // 2, 0)
+        else:
+            self.arrowhead = (x2 - im_x // 2, 0)
+        if y2 - self.y < 0:
+            self.arrowhead = (self.arrowhead[0], 1080 - y2 + im_y // 2)
+        else:
+            self.arrowhead = (self.arrowhead[0], 1080 - y2 - im_y // 2)
         self.x = x2
         self.rect.x = self.x - im_x // 2
         self.y = y2
         self.rect.y = 1080 - self.y - im_y // 2
+
+class Smth():
+    def __init__(self):
+        self.type = 0
         self.arrowhead = (0, 0)
-
-
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, group):
@@ -71,6 +86,11 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = 200
         self.rect.y = height - 150
+        self.x1 = self.rect.x
+        im_x, im_y = self.image.get_size()
+        self.x2 = self.x1 + im_x
+        self.y1 = self.rect.y
+        self.y2 = self.y1 + im_y
 
     def update(self):
         pass
@@ -100,6 +120,9 @@ x1, y1, x2, y2 = 0, 0, 0, 0
 dx, dy = 0, 0
 running = True
 flag = False
+arrow = Smth()
+flying = False
+print(player.x1, player.x2, player.y1, player.y2)
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -111,14 +134,29 @@ while running:
             dx, dy = event.pos
         if event.type == pygame.MOUSEBUTTONUP:
             x2, y2 = event.pos
-            arrow = Arrow(sp, x, y, defa, g, smax, x1, 1080 - y1, x2, 1080 - y2)
-            flag = False
+            if math.hypot(y1 - y2, x1 - x2) >= 10 and not flying:
+                flying = True
+                arrow = Arrow(sp, x, y, defa, g, smax, x1, y2, x2, y1)
+                flag = False
     '''if arrow.arrowhead:
         pass
     if arrow.arrowhead[1] <= 0:
         pass'''
+
+    if arrow.type == 1:
+        # print(*arrow.arrowhead)
+        if player.x1 <= arrow.arrowhead[0] <= player.x2 and player.y1 <= arrow.arrowhead[1] <= player.y2:
+            flying = False
+            arrow.type = 2
+        if arrow.arrowhead[1] > 1080:
+            flying = False
+            arrow.type = 2
     screen.fill((0, 0, 0))
     sp.update(120)
+    pygame.draw.rect(screen, (255, 0, 0), (player.x1, min(player.y1, player.y2), (player.x2 - player.x1), (player.y2 - player.y1)))
+    a, b = arrow.arrowhead
+    a, b = int(a), int(b)
+    pygame.draw.circle(screen, (0, 0, 255), (a, b), 5)
     sp.draw(screen)
     player_sprite.draw(screen)
     player_sprite.update()
