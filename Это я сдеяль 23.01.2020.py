@@ -48,8 +48,9 @@ class Arrow(pygame.sprite.Sprite):
         self.x = x
         self.y = y
 
-    def update(self, fps):
+    def update(self, fps, offset):
         if self.type == 2:
+            self.rect.x += offset
             return 0
         self.vy -= self.g / fps
         y2 = self.y + self.vy / fps - self.g / fps ** 2 / 2
@@ -79,21 +80,27 @@ class Smth():
         self.arrowhead = (0, 0)
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, group):
+    def __init__(self, group, x, reverse):
         super().__init__(group)
         not_image = load_image("Boy.png", (255, 255, 255))
+        if reverse:
+            not_image = pygame.transform.flip(not_image, True, False)
         self.image = pygame.transform.scale(not_image, (132, 140))
         self.rect = self.image.get_rect()
-        self.rect.x = 200
+        self.rect.x = x
+        if reverse:
+            self.rect.x += self.image.get_size()[0]
         self.rect.y = height - 150
         self.x1 = self.rect.x
-        im_x, im_y = self.image.get_size()
-        self.x2 = self.x1 + im_x
+        self.im_x, self.im_y = self.image.get_size()
+        self.x2 = self.x1 + self.im_x
         self.y1 = self.rect.y
-        self.y2 = self.y1 + im_y
+        self.y2 = self.y1 + self.im_y
 
-    def update(self):
-        pass
+    def update(self, offset=0):
+        self.rect.x += offset
+        self.x1 = self.rect.x
+        self.x2 = self.x1 + self.im_x
 
 
 class Heart(pygame.sprite.Sprite):
@@ -105,62 +112,73 @@ class Heart(pygame.sprite.Sprite):
         self.rect.x = 200
         self.rect.y = height - 150
 
+def play_round():
+    flag = False
+    arrow = Smth()
+    running = True
+    shot_was = False
+    hit = False
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                x1, y1 = event.pos
+                flag = True
+            if event.type == pygame.MOUSEMOTION and flag:
+                dx, dy = event.pos
+            if event.type == pygame.MOUSEBUTTONUP:
+                x2, y2 = event.pos
+                if math.hypot(y1 - y2, x1 - x2) >= 10 and not shot_was:
+                    shot_was = True
+                    arrow = Arrow(sp, x, y, defa, g, smax, x1, y2, x2, y1)
+                    flag = False
+        if shot_was:
+            if arrow.type == 1:
+                # print(*arrow.arrowhead)
+                if player2.x1 <= arrow.arrowhead[0] <= player2.x2 and player2.y1 <= arrow.arrowhead[1] <= player2.y2:
+                    running = False
+                    hit = True
+                    arrow.type = 2
+                if arrow.arrowhead[1] > 1080:
+                    running = False
+                    arrow.type = 2
+            im = arrow.image.get_size()[0]
+            offset = 960 - arrow.x
+            arrow.x = 960
+            arrow.rect.x = 960 - arrow.image.get_size()[0] // 2
+            screen.fill((0, 0, 0))
+            sp.update(120, offset)
+            sp.draw(screen)
+            player_sprite.update(offset)
+            player_sprite.draw(screen)
+            pygame.display.flip()
+            time.sleep(1 / 120)
+    return hit
+
 
 screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 size = width, height = pygame.display.get_surface().get_size()
-player = Player(player_sprite)
+player = Player(player_sprite, 828, False)
+player2 = Player(player_sprite, 1500, True)
 heart = Heart(healt_sprite)
 
-x = 200 + 17 * 4
+player_sprite.update()
+player_sprite.draw(screen)
+
+x = 960
 y = 100
 defa = 3000
 g = 1000
 smax = 600
-x1, y1, x2, y2 = 0, 0, 0, 0
 dx, dy = 0, 0
 running = True
 flag = False
 arrow = Smth()
 flying = False
-print(player.x1, player.x2, player.y1, player.y2)
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            x1, y1 = event.pos
-            flag = True
-        if event.type == pygame.MOUSEMOTION and flag:
-            dx, dy = event.pos
-        if event.type == pygame.MOUSEBUTTONUP:
-            x2, y2 = event.pos
-            if math.hypot(y1 - y2, x1 - x2) >= 10 and not flying:
-                flying = True
-                arrow = Arrow(sp, x, y, defa, g, smax, x1, y2, x2, y1)
-                flag = False
-    '''if arrow.arrowhead:
-        pass
-    if arrow.arrowhead[1] <= 0:
-        pass'''
-
-    if arrow.type == 1:
-        # print(*arrow.arrowhead)
-        if player.x1 <= arrow.arrowhead[0] <= player.x2 and player.y1 <= arrow.arrowhead[1] <= player.y2:
-            flying = False
-            arrow.type = 2
-        if arrow.arrowhead[1] > 1080:
-            flying = False
-            arrow.type = 2
-    screen.fill((0, 0, 0))
-    sp.update(120)
-    pygame.draw.rect(screen, (255, 0, 0), (player.x1, min(player.y1, player.y2), (player.x2 - player.x1), (player.y2 - player.y1)))
-    a, b = arrow.arrowhead
-    a, b = int(a), int(b)
-    pygame.draw.circle(screen, (0, 0, 255), (a, b), 5)
-    sp.draw(screen)
-    player_sprite.draw(screen)
-    player_sprite.update()
-    pygame.display.flip()
-    time.sleep(1 / 120)
-
+shot_was = False
+pygame.display.flip()
+arrowx = 0
+while not play_round():
+    player, player2 = player2, player
 pygame.quit()
