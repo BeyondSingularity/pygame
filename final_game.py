@@ -88,7 +88,7 @@ class Player(pygame.sprite.Sprite):
         if reverse:
             self.image = pygame.transform.flip(self.image, True, False)
             heart_x += self.image.get_size()[0]
-        self.health = Heart(player_sprite, heart_x)
+        self.health = Heart(group, heart_x)
         self.rect = self.image.get_rect()
         self.rect.x = x
         if reverse:
@@ -130,6 +130,25 @@ class Heart(pygame.sprite.Sprite):
         self.health -= 1
         self.image = pygame.transform.scale(self.hearts[self.health], (132, 42))
 
+
+class Ground(pygame.sprite.Sprite):
+    def __init__(self, group, x):
+        super().__init__(group)
+        self.x = x
+        self.image = load_image("ground.jpg")
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = 1080 - 145
+
+    def update(self, offset):
+        self.x += offset
+        while self.x < -499:
+            self.x += 2495
+        while self.x > 1996:
+            self.x -= 2495
+        self.rect.x = int(self.x)
+
+
 def play_round():
     flag = False
     arrow = Smth()
@@ -152,6 +171,12 @@ def play_round():
                 flag = True
             if event.type == pygame.MOUSEMOTION and flag:
                 dx, dy = event.pos
+                screen.fill((0, 0, 0))
+                for a, b, r in make_trajectory(x, y, x1, y1, dx, dy):
+                    pygame.draw.circle(screen, (255, 255, 255), (int(a), 1080 - int(b)), r)
+                    sp.draw(screen)
+                    player_sprite.draw(screen)
+                    pygame.display.flip()
             if event.type == pygame.MOUSEBUTTONUP:
                 x2, y2 = event.pos
                 if math.hypot(y1 - y2, x1 - x2) >= 10 and not shot_was:
@@ -159,14 +184,14 @@ def play_round():
                     arrow = Arrow(sp, x, y, defa, g, smax, x1, y2, x2, y1)
                     flag = False
         if shot_was:
+            screen.fill((0, 0, 0))
             if player2.x1 <= arrow.arrowhead[0] <= player2.x2 and player2.y1 <= arrow.arrowhead[1] <= player2.y2:
                 running = False
                 player2.health.bite()
                 arrow.type = 2
-            if arrow.arrowhead[1] > 1080:
+            if arrow.arrowhead[1] > 1080 - 145:
                 running = False
                 arrow.type = 2
-            screen.fill((0, 0, 0))
             offset = 960 - arrow.x
             arrow.x = 960
             arrow.rect.x = 960 - arrow.image.get_size()[0] // 2
@@ -178,13 +203,26 @@ def play_round():
             time.sleep(1 / 120)
 
 
-start_health = 2
+def make_trajectory(x, y, x1, y2, x2, y1):
+    t = 0.5
+    l = math.hypot(y2 - y1, x2 - x1)
+    vx = defa * (x2 - x1) / l * (min(smax, l) / smax)
+    vy = defa * (y1 - y2) / l * (min(smax, l) / smax)
+    circles = []
+    for i in range(10):
+        vy -= g * t / 10
+        y += vy * t / 10 - g * (t / 10) ** 2 / 2
+        x -= vx * t / 10
+        circles.append((x, y, 6 - i // 2))
+    return circles
+
+
+start_health = 6
 x = 960
-y = 100
+y = 230
 defa = 3750
 g = 1000
 smax = 600
-dx, dy = 0, 0
 running = True
 flag = False
 arrow = Smth()
@@ -193,12 +231,14 @@ shot_was = False
 
 screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 size = width, height = pygame.display.get_surface().get_size()
+height -= 130
 pos1 = random.randint(0, 5000)
 pos2 = random.randint(8000, 13000)
-pos1 = 6000
-pos2 = 7000
+pos2 = pos1 + 1000
 player = Player(player_sprite, pos1, False)
 player2 = Player(player_sprite, pos2, True)
+for i in range(5):
+    Ground(player_sprite, (i - 1) * 499)
 
 player_sprite.update(0)
 player_sprite.draw(screen)
