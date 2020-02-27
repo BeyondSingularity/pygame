@@ -15,54 +15,6 @@ player_sprite = pygame.sprite.Group()
 FPS = 60
 
 
-# def ask_exit():
-#     def dont():
-#         font = pygame.font.Font(None, 50)
-#         ans = ['нет', 'да']
-#
-#         txt = font.render('Вы действительно хотите выйти?', 1, (100, 255, 100))
-#         txt_x = WIDTH // 2 - txt.get_width() // 2
-#         txt_y = 10
-#         screen.blit(txt, (txt_x, txt_y))
-#
-#         for i in range(2):
-#             Distance = 100
-#             text = font.render(ans[i], 1, (100, 255, 100))
-#             text_x = WIDTH // 2 - text.get_width() // 2
-#             text_y = Distance * (i + 1)
-#             text_w = text.get_width()
-#             text_h = text.get_height()
-#             screen.blit(text, (text_x, text_y))
-#             res = ans[i]
-#             ans[i] = (res, 0, text_x, text_y, text_w, text_h)
-#         pygame.draw.polygon(screen, (100, 255, 100),
-#                             ((ans[num][2] - 20, ans[num][3]),
-#                              (ans[num][2] - 10,
-#                               ans[num][3] + ans[num][5] // 2),
-#                              (ans[num][2] - 20,
-#                               ans[num][3] + ans[num][5])))
-#
-#     num = 0
-#     is_run = True
-#     while is_run:
-#         for event in pygame.event.get():
-#             if event.type == pygame.QUIT:
-#                 is_run = False
-#             if event.type == pygame.KEYDOWN:
-#                 if event.key == pygame.K_UP:
-#                     num = (num - 1) % 2
-#                 elif event.key == pygame.K_DOWN:
-#                     num = (num + 1) % 2
-#                 elif event.key == pygame.K_KP_ENTER:
-#                     if num == 0:
-#                         return False
-#                     elif num == 1:
-#                         return True
-#         screen.fill((0, 0, 0))
-#         dont()
-#         pygame.display.flip()
-
-
 class MainMenu:
     def __init__(self):
         self.list_of_games = []

@@ -8,22 +8,63 @@ import random
 pygame.init()
 
 
-def ask_exit(screen, WIDTH):
+def draw_win_screeen(screen, win_player, width, height):
+    ans = [win_player + ' победил', 'Начать заново', 'Выйти в главное меню']
+    num = 1
+    is_run = True
+    font = pygame.font.Font(None, 50)
+    for i in range(3):
+        Distance = 100
+        text = font.render(ans[i], 1, (100, 255, 100))
+        text_x = width // 2 - text.get_width() // 2
+        text_y = Distance * (i + 1)
+        text_w = text.get_width()
+        text_h = text.get_height()
+        res = ans[i]
+        ans[i] = (res, text, text_x, text_y, text_w, text_h)
+    while is_run:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                is_run = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    num = (num - 1) % 2
+                elif event.key == pygame.K_DOWN:
+                    num = (num + 1) % 2
+                elif event.key == pygame.K_KP_ENTER:
+                    if num == 1:
+                        return
+                    elif num == 0:
+                        game()
+        screen.fill((0, 0, 0))
+        for i in range(3):
+            screen.blit(ans[i][1], (ans[i][2], ans[i][3]))
+
+        pygame.draw.polygon(screen, (100, 255, 100),
+                            ((ans[num + 1][2] - 20, ans[num + 1][3]),
+                             (ans[num + 1][2] - 10,
+                              ans[num + 1][3] + ans[num + 1][5] // 2),
+                             (ans[num + 1][2] - 20,
+                              ans[num + 1][3] + ans[num + 1][5])))
+        pygame.display.flip()
+
+
+def ask_exit(screen, width):
     num = 0
 
-    def dont(num):
+    def draw_ask_exit(num):
         font = pygame.font.Font(None, 50)
         ans = ['нет', 'да']
 
         txt = font.render('Вы действительно хотите выйти?', 1, (100, 255, 100))
-        txt_x = WIDTH // 2 - txt.get_width() // 2
+        txt_x = width // 2 - txt.get_width() // 2
         txt_y = 10
         screen.blit(txt, (txt_x, txt_y))
 
         for i in range(2):
             Distance = 100
             text = font.render(ans[i], 1, (100, 255, 100))
-            text_x = WIDTH // 2 - text.get_width() // 2
+            text_x = width // 2 - text.get_width() // 2
             text_y = Distance * (i + 1)
             text_w = text.get_width()
             text_h = text.get_height()
@@ -53,16 +94,13 @@ def ask_exit(screen, WIDTH):
                     elif num == 1:
                         return True
         screen.fill((0, 0, 0))
-        dont(num)
+        draw_ask_exit(num)
         pygame.display.flip()
 
 
 def game():
-
-    enemy = pygame.sprite.Group()
     player_sprite = pygame.sprite.Group()
     sp = pygame.sprite.Group()
-    healt_sprite = pygame.sprite.Group()
 
     def load_image(name, colorkey=None):
         fullname = os.path.join('data', name)
@@ -149,6 +187,7 @@ def game():
             self.x2 = self.x1 + self.im_x
             self.y1 = self.rect.y
             self.y2 = self.y1 + self.im_y
+            self.kof = 1 + int(not reverse)
 
         def update(self, offset=0):
             self.x1 += offset
@@ -196,7 +235,6 @@ def game():
                 self.x -= 2495
             self.rect.x = int(self.x)
 
-
     def make_trajectory(x, y, x1, y2, x2, y1):
         t = 0.5
         l = math.hypot(y2 - y1, x2 - x1)
@@ -210,7 +248,7 @@ def game():
             circles.append((x, y, 6 - i // 2))
         return circles
 
-    start_health = 6
+    start_health = 1
     x = 960
     y = 230
     defa = 3750
@@ -227,7 +265,7 @@ def game():
     height -= 130
     pos1 = random.randint(0, 5000)
     pos2 = random.randint(8000, 13000)
-    pos2 = pos1 + 1000
+    pos2 = pos1 + 400
     player = Player(player_sprite, pos1, False)
     player2 = Player(player_sprite, pos2, True)
     for i in range(5):
@@ -239,6 +277,7 @@ def game():
     pygame.display.flip()
     arrowx = 0
     while player2.health.get() != 0 and player.health.get() != 0:
+        change_coefficient = True
         flag = False
         arrow = Smth()
         running = True
@@ -276,7 +315,8 @@ def game():
                     if event.key == pygame.K_ESCAPE:
                         if ask_exit(screen, width):
                             return
-
+                        else:
+                            change_coefficient = False
             if shot_was:
                 screen.fill((0, 0, 0))
                 if player2.x1 <= arrow.arrowhead[0] <= player2.x2 and player2.y1 <= arrow.arrowhead[1] <= player2.y2:
@@ -296,4 +336,10 @@ def game():
                 pygame.display.flip()
                 time.sleep(1 / 120)
         player, player2 = player2, player
-        time.sleep(1)
+        if change_coefficient:
+            time.sleep(1)
+
+    if player.health.get() == 0:
+        draw_win_screeen(screen, 'Игрок ' + str(player.kof), width, height)
+    elif player2.health.get() == 0:
+        draw_win_screeen(screen, 'Игрок ' + str(player.kof), width, height)
